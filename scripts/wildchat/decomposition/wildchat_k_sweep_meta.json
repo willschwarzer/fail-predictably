@@ -1,0 +1,14 @@
+{
+  "length": {
+    "csv": "wildchat_frlmb_tail_fit_quality_20260504/assistant_length_all/wildchat_assistant_length_scores.csv",
+    "score_column": "asst_char_len",
+    "score_mode": "identity",
+    "m_for_qp": 5000
+  },
+  "mean_nll": {
+    "csv": "wildchat_frlmb_tail_fit_quality_20260504/assistant_nll_all_subsample0.33/wildchat_nll_scores.csv",
+    "score_column": "mean_nll",
+    "score_mode": "identity",
+    "m_for_qp": 5000
+  }
+}

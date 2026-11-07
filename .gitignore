@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Run outputs: results, task banks and figures go under artifacts/ by default, logs under logs/.
+artifacts/
+logs/*
+!logs/.gitkeep
+slurm-*.out
+
+# Local copy of the WildChat arrow shards (see the README).
+data/wildchat/
+
+# Outputs of the rank-term numerics.
+scripts/theory/rank_term/inverse/exact.json
+scripts/theory/rank_term/forward/exact_checks.json
+scripts/theory/rank_term/verify_inverse/exact_checks.json

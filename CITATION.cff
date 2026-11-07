@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper."
+title: "Training Agents to Fail Predictably: Fine-Tuning for Forecastable Tail Risk"
+authors:
+  - family-names: Schwarzer
+    given-names: Will
+    affiliation: University of Massachusetts Amherst
+  - family-names: Niekum
+    given-names: Scott
+    affiliation: University of Massachusetts Amherst
+license: MIT
+repository-code: "https://github.com/willschwarzer/fail-predictably"
+preferred-citation:
+  type: conference-paper
+  title: "Training Agents to Fail Predictably: Fine-Tuning for Forecastable Tail Risk"
+  authors:
+    - family-names: Schwarzer
+      given-names: Will
+    - family-names: Niekum
+      given-names: Scott
+  collection-title: "Advances in Neural Information Processing Systems"
+  year: 2026
+  url: "https://arxiv.org/abs/2605.15134"

@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fail-predictably"
+version = "1.0.0"
+description = "Code for Training Agents to Fail Predictably: Fine-Tuning for Forecastable Tail Risk (NeurIPS 2026)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+authors = [{ name = "Will Schwarzer" }, { name = "Scott Niekum" }]
+# requirements.txt pins the versions we ran.
+dependencies = [
+    "torch",
+    "transformers",
+    "peft",
+    "accelerate",
+    "datasets",
+    "safetensors",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "tqdm",
+    "mpmath",
+]
+
+[project.urls]
+Repository = "https://github.com/willschwarzer/fail-predictably"
+Paper = "https://arxiv.org/abs/2605.15134"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

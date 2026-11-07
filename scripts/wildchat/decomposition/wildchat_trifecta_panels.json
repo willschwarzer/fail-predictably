@@ -1,0 +1,66 @@
+[
+  {
+    "label": "Asst turn length",
+    "csv": "wildchat_frlmb_tail_fit_quality_20260504/assistant_length_all/wildchat_assistant_length_scores.csv",
+    "score_column": "asst_char_len",
+    "score_mode": "identity",
+    "bin_mode": "log",
+    "x_scale": "log",
+    "x_label": "asst char length",
+    "n_log_bins": 100
+  },
+  {
+    "label": "Harmful log-prob",
+    "csv": "wildchat_frlmb_tail_fit_quality_20260503/harmful_flagged/wildchat_harmful_scores.csv",
+    "score_column": "log_p_harmful",
+    "score_mode": "gumbel_log_prob",
+    "bin_mode": "linear",
+    "x_scale": "linear",
+    "x_label": "psi = -log(-log P(harmful))",
+    "n_linear_bins": 100
+  },
+  {
+    "label": "Per-token mean NLL",
+    "csv": "wildchat_frlmb_tail_fit_quality_20260504/assistant_nll_all_subsample0.33/wildchat_nll_scores.csv",
+    "score_column": "mean_nll",
+    "score_mode": "identity",
+    "bin_mode": "linear",
+    "x_scale": "linear",
+    "x_label": "per-token mean NLL",
+    "n_linear_bins": 100
+  },
+  {
+    "label": "Detoxify toxicity",
+    "csv": "wildchat_frlmb_tail_fit_quality_20260503/detoxify_all/wildchat_detoxify_scores.csv",
+    "score_column": "toxicity",
+    "score_mode": "gumbel_prob",
+    "bin_mode": "linear",
+    "x_scale": "linear",
+    "x_label": "psi = -log(-log toxicity)",
+    "n_linear_bins": 100
+  },
+  {
+    "label": "Exp(1)",
+    "synthetic": {"name": "exponential", "n": 200000, "seed": 11},
+    "bin_mode": "linear",
+    "x_scale": "linear",
+    "x_label": "s ~ Exp(1)",
+    "n_linear_bins": 100
+  },
+  {
+    "label": "Pareto(3)",
+    "synthetic": {"name": "pareto", "alpha": 3.0, "n": 200000, "seed": 11},
+    "bin_mode": "linear",
+    "x_scale": "linear",
+    "x_label": "s ~ Pareto(3)",
+    "n_linear_bins": 100
+  },
+  {
+    "label": "Uniform(0,1)",
+    "synthetic": {"name": "uniform", "n": 200000, "seed": 11},
+    "bin_mode": "linear",
+    "x_scale": "linear",
+    "x_label": "s ~ Uniform(0,1)",
+    "n_linear_bins": 100
+  }
+]
