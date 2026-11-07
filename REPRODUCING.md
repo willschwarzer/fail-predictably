@@ -502,7 +502,7 @@ They load the held-out KL prompts from the path in each run's `config.json`, so 
    ```
 
    The 8B job needs a GPU with more than 16 GB (ours ran on an A100-80GB).
-   At 8B seed 17, `best/` holds the adapter of step 184, whereas the appendix's table uses the copy from step 155, which we did not read.
+   At 8B seed 17, `best/` holds the adapter of step 184, whereas the appendix's table uses the copy from step 155, which gave the same thinking-off KL and top-1 probability when we read it.
    Each log lists the most likely first tokens of every checkpoint, and `kl_thinking_off_final_summary.py` prints the KL and the trained models' top-1 probabilities.
 
 3. Read the minimal-change snapshots at 100 and 200 steps into the readouts:
