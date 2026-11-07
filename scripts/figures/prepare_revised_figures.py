@@ -55,6 +55,15 @@ for size in ['0.6b','1.7b','4b','8b']:
         subset=[r for r in rows if r['size']==size and r['method']==method]
         if not subset:continue
         summary[f'{size}/{method}']={'n':len(subset),**{k:meansem([r[k] for r in subset]) for k in ['error','baseline_error','fold','risk_reduction_decades','kl']}}
+# The caption's 8B final-checkpoint factor: the same three 8B runs read at the end of training, in their own directories.
+final=[]
+for seed in SEEDS[:3]:
+    p=RESULTS/f'lquant_40slots_nopwseed_strictv2_iog_full_bootstrap1_cache296_qwen3_8b_seed{seed}_20260725/seed_{seed}'
+    trained=json.loads((p/'test_results.json').read_text())
+    base=json.loads((p/'baseline_test_results.json').read_text())
+    assert len(trained)==len(base)==7 and set(trained)==set(base)
+    final.append(st.mean(v['forecast_sq_log10_error'] for v in base.values())/st.mean(v['forecast_sq_log10_error'] for v in trained.values()))
+summary['8b/ours, final checkpoint']={'n':len(final),'fold':meansem(final)}
 SUMMARIES.mkdir(parents=True,exist_ok=True)
 (SUMMARIES/'password_v2_verified.json').write_text(json.dumps(dict(rows=rows,summary=summary),indent=2)+'\n')
 controls={}

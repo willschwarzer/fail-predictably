@@ -206,7 +206,7 @@ The four arms of the paper, and the run names that the readouts look for (each n
    sbatch $R/cert_scale.sbatch cert_scale.csv                        # needs the full-pool scores
    ```
 
-   Then the searches for the best tail of any shape, each in three jobs (prepare, array, aggregate), and the table of the paragraph "Room for improvement":
+   Then the searches for the best tail of any shape, each in three jobs (prepare, array, aggregate), and the numbers of the paragraphs "Room for improvement" and "The error of a straight tail":
 
    ```bash
    sbatch $R/tail_opt.sbatch --fleet --bank --label fleet --prepare-only
@@ -217,6 +217,8 @@ The four arms of the paper, and the run names that the readouts look for (each n
    sbatch --mem=32G --array=0-167 $R/tail_opt.sbatch --manifest tail_opt_results/grid.manifest.npz
    sbatch --mem=16G $R/tail_opt.sbatch --manifest tail_opt_results/grid.manifest.npz --aggregate-only
    sbatch $R/grid_theory.sbatch tail_opt_grid_cells.csv              # prints the table to its log
+   sbatch $R/grid_theory_sweep.sbatch                                # grid_theory_sweep.csv; G at b = 1/6 is column G_lam6
+   sbatch $R/py_small.sbatch variance_share.py                       # prints the shares of bias and variance
    ```
 
    The array sizes must match the number of pools in each manifest, which the prepare step prints; 125 is the count for the fleet search when every run is present.
@@ -226,11 +228,13 @@ The four arms of the paper, and the run names that the readouts look for (each n
    ```bash
    sbatch scripts/minimal_change/readouts/py_small.sbatch scripts/figures/make_minimal_change_figure.py
    sbatch scripts/minimal_change/readouts/py_small.sbatch scripts/figures/make_tail_shape.py
+   sbatch scripts/minimal_change/readouts/py_small.sbatch scripts/figures/make_minimal_change_room_figure.py
    ```
 
-   The first draws the appendix figure, `minimal_change_fold_kl_rebuild.pdf`.
+   The first draws the appendix's figure of improvement factors against KL divergence, `minimal_change_fold_kl_rebuild.pdf`.
    The second draws Figure 2 (`tail_shape_body_wildchat.pdf`) and the tail-shape appendix figure (`tail_shape_password.pdf`).
-   Both scripts check the numbers that the text quotes against the readouts' tables.
+   The third draws the figure of the paragraph "Room for improvement" (`minimal_change_room.pdf`) from the readouts of step 5.
+   All three scripts check the numbers that the text quotes against the readouts' tables.
 
 ## A finite-k decomposition for the inverse-OLS Gumbel-tail extrapolator
 
@@ -292,8 +296,8 @@ These scripts write their JSON files next to themselves, not under `$RESULTS_ROO
    The without-replacement totals in "Two further checks" come from the k-sweep cells at k = 10 (length and mean NLL) and from `TAG_DATE=20260503 sbatch scripts/wildchat/decomposition/run_wildchat_frlmb_analyze.sbatch` (Detoxify and harmful-token).
 
 `wildchat_count_flagged_english.py` counts the English and flagged slices, and `wildchat_schema_verify.py` checks a shard's schema.
-This release does not include the script behind the reference-distribution numbers in "Empirical match against the reverse-Weibull reference".
-Figure 3's script (`scripts/theory/theory_decomposition_figure.py`) computes the same decomposition for Exp(1), Lognormal, Log-Weibull and Pareto, at (M, N) = (10,000, 100,000).
+`python scripts/wildchat/decomposition/reference_decomposition.py` computes the numbers of "Comparison with a bounded reference distribution", the same decomposition on samples from Exp(1), Lognormal, Log-Weibull, Pareto and Uniform(0,1).
+It reuses the code of Figure 3's script (`scripts/theory/theory_decomposition_figure.py`), and its rank term is a Monte Carlo estimate, 0.794, where the paper prints the exact value, 0.793.
 
 ## Forecastability on natural user prompts
 
@@ -376,7 +380,7 @@ Then train and evaluate:
    ```
 
    The table script looks for these evaluation names, which record the steps our runs selected (89, 80 and 126, as each run's `best_step.json` says).
-7. `python scripts/figures/prepare_revised_figures.py` computes the table and the constant-forecast comparison and writes them to `$RESULTS_ROOT/summaries/`.
+7. `python scripts/figures/prepare_revised_figures.py` computes the table, the 8B final-checkpoint factor in its caption, and the constant-forecast comparison, and writes them to `$RESULTS_ROOT/summaries/`.
    It also draws a figure of the per-seed errors, `password_v2_errors.pdf`, which the paper does not include.
 
 The training budget for Qwen3-8B on the original bank uses the bank of `TAG_DATE=20260506 bash scripts/banks/build_lquant_modbulkgcg_qwen3_8b_bank.sh` and one launcher per row of the table, at seeds 11 17 23:
@@ -405,7 +409,7 @@ The names of all these runs carry fixed dates.
 3. Exact-regret training extended to 600 updates, from scratch and resumed (`exact600`, `exact600ext`), and the three 32-rollout seeds that we evaluated at their last stable checkpoint (`n32_last_stable`):
    `bash scripts/gridworld/run_rlquant_bipolar_sampled_returns_extras.sh <set>`.
 4. The calibrations, on both the regret and the negative-return scale: `sbatch scripts/gridworld/run_rlquant_posthoc_calibration_sweep.sbatch` (the same sweep as in Section 6.2).
-5. `python scripts/gridworld/collect_sampled_returns.py` writes the table, the 32-rollout result, the worst-case regret factors, the RL improvement factors and the calibrated errors to `$RESULTS_ROOT/summaries/sampled_returns.md`, and the returns that the figure plots to `$RESULTS_ROOT/summaries/rl_capability_verified.json`.
+5. `python scripts/gridworld/collect_sampled_returns.py` writes the table, the 32-rollout result, the worst-case regret factors, the RL improvement factors, the calibrated errors and the results of the companion experiment with sampled regret (both estimators, and exact-regret training at 300 and 600 updates) to `$RESULTS_ROOT/summaries/sampled_returns.md`, and the returns that the figure plots to `$RESULTS_ROOT/summaries/rl_capability_verified.json`.
 6. The recall of the exact top-k tasks: `sbatch scripts/gridworld/run_rlquant_reinforce_selection_overlap.sbatch`.
 
 ## Fit/deployment distribution shift
@@ -445,6 +449,8 @@ The names of all these runs carry fixed dates.
 
 5. `python scripts/password_game/collect_distshift_results.py` writes every number of the appendix to `$RESULTS_ROOT/summaries/distshift_results.md`.
    `make_appendix_figures.py` reads the per-seed table in that file.
+   The paper's calibrated error for Ours on the hardened bank, 0.772, is the mean over nine seeds, because we did not run the calibration for seed 23.
+   The sweep of step 4 calibrates all ten, and the file gives the number of seeds next to each calibrated error.
 
 ## Checks beyond the training forecast and score
 
@@ -486,4 +492,4 @@ Its inputs, and the scripts above that write them:
 | `$RESULTS_ROOT/summaries/rl_capability_verified.json` | `collect_sampled_returns.py` (Forecastability training with sampled returns) |
 | `$RESULTS_ROOT/summaries/distshift_results.md` | `collect_distshift_results.py` (Fit/deployment distribution shift) |
 
-The minimal-change appendix's figure comes from `scripts/figures/make_minimal_change_figure.py` (step 6 of that appendix above).
+The minimal-change appendix's two plotted figures come from `scripts/figures/make_minimal_change_figure.py` and `scripts/figures/make_minimal_change_room_figure.py` (step 6 of that appendix above).

@@ -37,9 +37,9 @@ SEEDS = {("wildchat", "spread"): 4}
 
 # Which KL the appendix reports. "on" formats the held-out KL prompts with Qwen3's default chat template (thinking
 # on), where the base model's first token is "<think>"; the trainers logged this KL. "off" uses the same prompts with
-# thinking off, as in training and scoring. Both were recomputed from the saved adapters into kl_thinking_off_*.csv;
-# the script that writes those files is not part of this release, so only the default ("on" with
-# PASSWORD_CUT = "right") runs from the release's readouts.
+# thinking off, as in training and scoring. Both were recomputed from the saved adapters into kl_thinking_off_*.csv
+# by scripts/audits/kl_thinking_off.sbatch. The appendix reports "on" in its table and figure, and the thinking-off
+# KL in one sentence, which minimal_change() checks whenever those files are in the readouts.
 KL_TEMPLATE = "on"
 
 # Where the password runs' KL prompts are cut to 512 tokens. "right" is the trainers' cut, which removes the
@@ -79,6 +79,8 @@ TEXT_KL = [
     (r"at KL divergences $25$ and $240{,}000$ times larger than with both terms", "wildchat spread / both", "2.4e5"),
     (r"it moved the model furthest of the four arms (KL $1.2\times10^{-2}$)", "password spread", "1.2e-2"),
 ]
+# The ratios of thinking-off KL in "$19$ and $140$ times smaller than with the mask alone", as printed.
+OFF_RATIO = {"password": "19", "wildchat": "140"}
 # Other numbers in the paragraphs: the phrase, then (quantity, number as printed) for each number in it.
 # Quantities: "<bank> <arm> <fold|lo|hi|sn|cert|top|median>", "<bank> both fold, step 100",
 # "<bank> both sn / cert", "<bank> seed fold <min|max>, <arm>", "password anchor / mask, seeds' geometric mean".
@@ -92,13 +94,13 @@ TEXT_NUM = [
       ("wildchat mask top", "105.6")]),
     (r"the median fell further ($14.3$ nats) than the highest", [("password both median", "14.3")]),
     (r"by factors of $4.41$ and $3.17$", [("password both fold", "4.41"), ("wildchat both fold", "3.17")]),
-    (r"($3.45$ and $3.18$, or $0.74$ and $0.51$ of the best straight tail's factor)",
+    (r"Their spread-normalized factors were $3.45$ and $3.18$, or $0.74$ and $0.51$ of the best straight tail's factor",
      [("password both sn", "3.45"), ("wildchat both sn", "3.18"), ("password both sn / cert", "0.74"),
       ("wildchat both sn / cert", "0.51")]),
     (r"the pooled improvement factor rose from $3.33$ to $4.41$ on the password bank and from $2.77$ to $3.17$ on WildChat",
      [("password both fold, step 100", "3.33"), ("password both fold", "4.41"),
       ("wildchat both fold, step 100", "2.77"), ("wildchat both fold", "3.17")]),
-    (r"(spread-normalized factors of $0.20$ on the password bank and $0.33$ on WildChat)",
+    (r"its spread-normalized factors were below one ($0.20$ on the password bank and $0.33$ on WildChat)",
      [("password anchor sn", "0.20"), ("wildchat anchor sn", "0.33")]),
     (r"($16.5$ against $105.6$ nats at the top of the tail, and $3.7$ against $90.2$ at the median)",
      [("wildchat anchor top", "16.5"), ("wildchat mask top", "105.6"), ("wildchat anchor median", "3.7"),
@@ -154,20 +156,21 @@ def gmean(values):
     return math.exp(np.mean([math.log(v) for v in values]))
 
 
-def kl_source(ds, margins=False):
-    """The file and column that hold bank ds's per-run KL under KL_TEMPLATE and PASSWORD_CUT."""
-    assert KL_TEMPLATE in ("on", "off") and PASSWORD_CUT in ("right", "left"), (KL_TEMPLATE, PASSWORD_CUT)
-    if KL_TEMPLATE == "on" and (ds == "wildchat" or PASSWORD_CUT == "right"):
+def kl_source(ds, margins=False, template=None, cut=None):
+    """The file and column that hold bank ds's per-run KL under KL_TEMPLATE and PASSWORD_CUT (or template and cut)."""
+    template, cut = template or KL_TEMPLATE, cut or PASSWORD_CUT
+    assert template in ("on", "off") and cut in ("right", "left"), (template, cut)
+    if template == "on" and (ds == "wildchat" or cut == "right"):
         return ("margin_table.csv" if margins else "kl_table.csv"), "kl_single_token"
-    left = "_left" if ds == "password" and PASSWORD_CUT == "left" else ""
-    return f"kl_thinking_off_{'margins' if margins else ds}{left}.csv", "kl_" + KL_TEMPLATE
+    left = "_left" if ds == "password" and cut == "left" else ""
+    return f"kl_thinking_off_{'margins' if margins else ds}{left}.csv", "kl_" + template
 
 
-def read_kl(rd, names):
+def read_kl(rd, names, template=None, cut=None):
     """Per-seed KL of the four arms' runs at steps 100 and 200: {(bank, step, arm): {seed: KL}}."""
     kl = defaultdict(dict)
     for ds in ("password", "wildchat"):
-        fn, col = kl_source(ds)
+        fn, col = kl_source(ds, template=template, cut=cut)
         for r in csv.DictReader(open(rd / fn)):
             # kl_table.csv names an arm's 200-step rows "<arm>, 200 steps" and gives the step as "steps".
             arm = r["arm"].removesuffix(", 200 steps")
@@ -240,6 +243,26 @@ def minimal_change(rd):
     for ds in steps:
         assert min(names.values(), key=lambda a: q[f"{ds} {a}"]) == "both", (ds, "another arm moved the model least")
     print("checked: the KL numbers in the appendix's paragraphs")
+    # "At the first token of a reply with thinking disabled, where the risk scores are read, they were $0.025$ and
+    # $0.052$, $19$ and $140$ times smaller than with the mask alone (geometric means over seeds, with prompts
+    # truncated from the left)". scripts/audits/kl_thinking_off.sbatch writes these files.
+    off_files = [kl_source(ds, template="off", cut="left")[0] for ds in steps]
+    if all((rd / fn).exists() for fn in off_files):
+        off = read_kl(rd, names, template="off", cut="left")
+        for ds in steps:
+            for a in ("both", "mask"):
+                assert set(off[(ds, steps[ds], a)]) == set(kl[(ds, a)]), (ds, a, "the thinking-off KL has other seeds")
+        g = {(ds, a): gmean(off[(ds, steps[ds], a)].values()) for ds in steps for a in ("both", "mask")}
+        for value, text, what in [(g[("password", "both")], "0.025", "password both, thinking off"),
+                                  (g[("wildchat", "both")], "0.052", "wildchat both, thinking off"),
+                                  (g[("password", "mask")] / g[("password", "both")], OFF_RATIO["password"],
+                                   "password mask / both, thinking off"),
+                                  (g[("wildchat", "mask")] / g[("wildchat", "both")], OFF_RATIO["wildchat"],
+                                   "wildchat mask / both, thinking off")]:
+            printed(value, text, what)
+        print("checked: the KL with thinking off in the appendix's paragraph (prompts cut from the left)")
+    else:
+        print(f"skipped the KL with thinking off: {' and '.join(off_files)} are not in {rd}")
 
     # ---- other numbers in the paragraphs
     v = {}
@@ -264,10 +287,10 @@ def minimal_change(rd):
         assert all(folds[(ds, "both")]["seeds"][s] > x for s, x in seeds100.items()), (ds, "a seed got worse")
     # "On the password bank, the median fell further ($14.3$ nats) than the highest"
     assert v["password both median"] > v["password both top"]
-    # "Most or all of that gain remained after spread normalization"
+    # "so by this measure most of the gain did not depend on compressing the tail"
     assert all(0.5 < v[f"{ds} both sn"] / v[f"{ds} both fold"] for ds in steps)
-    # "the anchor constraint improved the forecast by large factors, but none of the gain remained after spread normalization" and
-    # "although none of its gain remained after spread normalization"
+    # "the anchor constraint improved the forecast by large factors, but its spread-normalized factors were below one" and
+    # "although its spread-normalized factor was below one"
     assert all(v[f"{ds} anchor sn"] < 1 for ds in steps)
     # "with three seeds above one and two below"
     assert sorted(x > 1 for x in folds[("password", "spread")]["seeds"].values()) == [False] * 2 + [True] * 3

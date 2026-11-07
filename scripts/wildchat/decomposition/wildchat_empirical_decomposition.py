@@ -30,6 +30,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams["pdf.fonttype"] = 42  # embed TrueType fonts rather than Type 3
+plt.rcParams["ps.fonttype"] = 42
 import numpy as np
 
 DIAG_DIR = Path(__file__).resolve().parent
@@ -262,7 +264,7 @@ def render_bars(rows: list[dict], out_pdf: Path) -> None:
     ax.set_ylabel(r"contribution to forecast error / $q^\prime(y)$")
 
     legend_elements = [
-        Patch(facecolor=color_rank, label=r"rank ($R_\theta / q^\prime(y)$)"),
+        Patch(facecolor=color_rank, label=r"rank ($T_\theta / q^\prime(y)$)"),
         Patch(facecolor=color_curv, label=r"curvature ($C_\theta / q^\prime(y)$)"),
         Patch(facecolor=color_rem,
               label=r"residual (occupancy + $o_p$)"),

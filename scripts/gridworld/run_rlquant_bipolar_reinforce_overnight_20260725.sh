@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Sampled-regret fleets and the RL baseline of the appendix "Forecastability training
 # with sampled returns", 10 seeds each, fresh exact pretraining, ema baseline, lr 1e-4.
-# The paper reads the 600-update fleets: the weighted (plugin) estimator at n = 8 and 16,
-# the scalar-loss (batch) estimator at every n, and the RL baseline at n = 1, 8 and 16.
+# The paper reads the 600-update fleets: the weighted (plugin) estimator at n = 8 and 16
+# (and its mean returns at every n), the scalar-loss (batch) estimator at every n, and the
+# RL baseline at n = 1, 8 and 16. scripts/gridworld/collect_sampled_returns.py reads them.
 #
 #   A/B x n{1,2,4,8,16,32} @ META_STEPS=600  (tags put m600 BEFORE the n segment so
 #     the ..._n{1,8}_lr*_10seeds_* globs of plot_rlquant_three_metric_bars.py

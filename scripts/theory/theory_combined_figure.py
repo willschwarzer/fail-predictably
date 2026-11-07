@@ -30,6 +30,8 @@ FIGURES_ROOT = Path(os.environ.get("FIGURES_ROOT", REPO_ROOT / "artifacts" / "fi
 # Bump all default font sizes by 1pt; the colorbar label is bumped by 2pt
 # explicitly below.
 mpl.rcParams.update({
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
     "font.size": 11,
     "axes.titlesize": 11,
     "axes.labelsize": 11,
@@ -63,6 +65,9 @@ def main():
         bias2d = json.load(f)
 
     rows = decomp["rows"]
+    for r in rows:
+        r["name"] = r["name"].replace("2e-05", r"2\times10^{-5}")
+    assert sum("2\\times10^{-5}" in r["name"] for r in rows) == 1, [r["name"] for r in rows]
 
     fig = plt.figure(figsize=(11.0, 4.0))
     gs = fig.add_gridspec(1, 2, width_ratios=[1.0, 1.25], wspace=0.28)
@@ -162,7 +167,7 @@ def main():
                if ks.min() <= k <= ks.max()]
     ax2.set_yticks(k_ticks)
     ax2.set_yticklabels([str(k) for k in k_ticks])
-    ax2.set_xlabel(r"deployment ratio $R = N/m$")
+    ax2.set_xlabel(r"deployment ratio $R = N/M$")
     ax2.set_ylabel(r"top-$k$ count")
     ax2.set_title("(b) rank-term overprediction surface", fontsize=11)
 

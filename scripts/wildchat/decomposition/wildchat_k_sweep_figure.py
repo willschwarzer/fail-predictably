@@ -29,6 +29,10 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams["pdf.fonttype"] = 42  # embed TrueType fonts rather than Type 3
+plt.rcParams["ps.fonttype"] = 42
+# Legend names of the scores, whose keys in --score-meta also name the sweep cells.
+DISPLAY = {"mean_nll": "mean NLL"}
 import numpy as np
 
 DIAG_DIR = Path(__file__).resolve().parent
@@ -209,7 +213,7 @@ def main() -> None:
         p90s = np.array([emp[k][2] for k in ks_emp]) / qp
         color = colors[i % len(colors)]
         ax.plot(ks_emp, centers, "-o", color=color, markersize=6,
-                label=f"empirical {label} / q'(y)")
+                label=f"empirical {DISPLAY.get(label, label)} / q'(y)")
         ax.fill_between(ks_emp, p10s, p90s, color=color, alpha=0.12)
         series.append(
             {
