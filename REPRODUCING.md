@@ -474,6 +474,59 @@ The names of all these runs carry fixed dates.
   The table of that subsection compares the runs of step 4 of the password game with the same runs trained with the mask, `scripts/password_game/run_lquant_40slots_modbulkgcg_metatrain_iog_multiseed.sbatch` (the same seeds and `TAG_DATE`s), and with the runs of Figure 4.
   `python scripts/audits/collect_no_mask_table.py` prints it.
 
+## KL divergence with thinking off, and generations with thinking on
+
+The trainers measured the KL divergence from the base model at the first generated token under Qwen3's default chat template, where the base model opens a thinking block.
+The risk scores are read at the first token of a reply with thinking disabled.
+These jobs recompute the KL at both tokens from the saved adapters, and let the trained models generate with thinking on.
+They load the held-out KL prompts from the path in each run's `config.json`, so the WildChat files must still be where training read them.
+
+1. Read the final adapters of Figure 4's runs, and print each method's means (the paragraph "KL divergence from the base model" of the appendix "Experimental details"):
+
+   ```bash
+   sbatch scripts/audits/kl_thinking_off_final.sbatch --out $RESULTS_ROOT/kl_thinking_off/kl_thinking_off_fig4.csv
+   python scripts/audits/kl_thinking_off_final_summary.py $RESULTS_ROOT/kl_thinking_off/kl_thinking_off_fig4.csv
+   ```
+
+   The paper gives the means of `kl_off_left`, `kl_off_right` and `kl_on_trainer`, and the ratios of SFT's means to ours.
+
+2. Read the selected checkpoints of the natural-prompt runs at each size (the paragraph "What these runs measure"):
+
+   ```bash
+   for s in 0_6b 1_7b 4b 8b; do
+     sbatch --job-name=kl_thinkoff_$s scripts/audits/kl_thinking_off_final.sbatch --adapter-subdir best \
+       --out $RESULTS_ROOT/kl_thinking_off/kl_thinking_off_natural_$s.csv \
+       "NatOurs=lquant_wildchat_ldnoobw_qwen_qwen3-${s}_iog_full_boot1_cache296_seed*_mb8klnf05" \
+       "NatSFT=lquant_wildchat_ldnoobw_sft_union_qwen_qwen3-${s}_klnf05_seed*"
+   done
+   ```
+
+   The 8B job needs a GPU with more than 16 GB (ours ran on an A100-80GB).
+   At 8B seed 17, `best/` holds the adapter of step 184, whereas the appendix's table uses the copy from step 155, which we did not read.
+   Each log lists the most likely first tokens of every checkpoint, and `kl_thinking_off_final_summary.py` prints the KL and the trained models' top-1 probabilities.
+
+3. Read the minimal-change snapshots at 100 and 200 steps into the readouts:
+
+   ```bash
+   O=$RESULTS_ROOT/lquant_dynamics/readouts
+   sbatch scripts/audits/kl_thinking_off.sbatch --dataset password --out $O/kl_thinking_off_password.csv
+   sbatch scripts/audits/kl_thinking_off.sbatch --dataset password --truncation-side left --out $O/kl_thinking_off_password_left.csv
+   sbatch scripts/audits/kl_thinking_off.sbatch --dataset wildchat --out $O/kl_thinking_off_wildchat.csv
+   sbatch scripts/minimal_change/readouts/py_small.sbatch kl_thinking_off_summary.py --suffix _left
+   ```
+
+   When the second and third files are in the readouts, `make_minimal_change_figure.py` (step 6 of "Changing the model as little as possible") checks the appendix's thinking-off KL against them.
+
+4. Let the models generate with thinking on, and count the outcomes:
+
+   ```bash
+   bash scripts/audits/submit_think_then_answer.sh
+   python scripts/audits/think_then_answer_classify.py $RESULTS_ROOT/think_then_answer $RESULTS_ROOT/think_then_answer_fig4_mc
+   ```
+
+   The launcher submits 11 GPU jobs, for the seed-11 natural-prompt checkpoints at 0.6B, 1.7B and 4B, Figure 4's runs, and the minimal-change runs at 200 steps on both banks.
+   The paper's "answered normally" is the `normal` column.
+
 ## Hardened password instruction
 
 The instruction is the `non_disclosure_strict_v2` policy in `src/forecast_experiment/password_game.py`, which the launchers select with `--password-policy non_disclosure_strict_v2`.

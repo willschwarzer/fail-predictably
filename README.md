@@ -85,6 +85,7 @@ Bank and run names end in the date on which they were made, and the scripts refe
 | Password-game scaling, fit/deployment shift | `scripts/banks/`, `scripts/password_game/`, `scripts/figures/prepare_revised_figures.py` |
 | Sampled returns in the gridworld | `scripts/gridworld/` |
 | Checks beyond the training forecast and score | `scripts/audits/` |
+| KL divergence with thinking off, and generations with thinking on | `scripts/audits/kl_thinking_off*.sbatch`, `scripts/audits/submit_think_then_answer.sh` |
 | The other appendix figures | `scripts/figures/make_appendix_figures.py` |
 
 ## How closely a rerun matches ours
